@@ -30,7 +30,7 @@ extension CommandWith: Hashable {
 
 public final class Store<State>: Dispatcher, Subscriber {
 
-    private(set) var state: State
+    public private(set) var state: State
     private let reducer: Reducer<State>
     private let queue: DispatchQueue
     private var subscribers: Set<CommandWith<State>> = []

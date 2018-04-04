@@ -3,14 +3,14 @@
 
 source 'https://github.com/msfrms/Spec.git'
 
-target 'ReduxSwift' do
+target 'SReduxSwift' do
   # Comment the next line if you're not using Swift and don't want to use dynamic frameworks
   use_frameworks!
 
   # Pods for ReduxSwift
   pod 'SUtils', '~> 0.1'
 
-  target 'ReduxSwiftTests' do
+  target 'SReduxSwiftTests' do
     inherit! :search_paths
     # Pods for testing
   end
