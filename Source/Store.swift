@@ -7,6 +7,7 @@ import Foundation
 import SUtils
 
 public typealias Reducer<State> = (State, Action) -> State
+public typealias SubscriberFilter<State> = (State, State) -> Bool
 
 public protocol Action {}
 
@@ -14,24 +15,21 @@ public protocol Dispatcher {
     func dispatch(action: Action)
 }
 
-public protocol Filter {
-    func filter(action: Action) -> Bool
+public struct Pass {
+    public static func always<State>(_ prevState: State, _ newState: State) -> Bool { return true }
+    public static func stateHasChanged<State: Equatable>(_ prevState: State, _ newState: State) -> Bool { return prevState != newState }
 }
 
 public final class Store<State>: Dispatcher {
 
-    class Pass: Filter {
-        func filter(action: Action) -> Bool { return true }
-    }
-
-    class Subscriber: Hashable {
+    private class Subscriber: Hashable {
 
         let command: CommandWith<State>
-        let filter: Filter
+        let pass: SubscriberFilter<State>
 
-        init(command: CommandWith<State>, filter: Filter) {
+        init(command: CommandWith<State>, filter: @escaping SubscriberFilter<State>) {
             self.command = command
-            self.filter = filter
+            self.pass = filter
         }
 
         var hashValue: Int { return ObjectIdentifier(self).hashValue }
@@ -58,11 +56,11 @@ public final class Store<State>: Dispatcher {
 
     @discardableResult
     public func subscribe(command: CommandWith<State>) -> Command {
-        return subscribe(command: command, for: Pass())
+        return subscribe(command: command, for: Pass.always)
     }
 
     @discardableResult
-    public func subscribe(command: CommandWith<State>, for filter: Filter) -> Command {
+    public func subscribe(command: CommandWith<State>, for filter: @escaping SubscriberFilter<State>) -> Command {
         let subscriber = Subscriber(command: command, filter: filter)
         self.queue.async {
             self.subscribers.insert(subscriber)
@@ -75,11 +73,12 @@ public final class Store<State>: Dispatcher {
 
     public func dispatch(action: Action) {
         self.queue.async {
-            self.state = self.reducer(self.state, action)
+            let prevState = self.state
+            let newState = self.reducer(prevState, action)
+            self.state = newState
             self.subscribers
-                .filter { $0.filter.filter(action: action) }
-                .forEach { $0.command.execute(value: self.state) }
+                    .filter { $0.pass(prevState, newState) }
+                    .forEach { $0.command.execute(value: newState) }
         }
     }
 }
-
