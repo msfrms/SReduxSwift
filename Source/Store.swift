@@ -16,8 +16,8 @@ public protocol Dispatcher {
 }
 
 public struct Pass {
-    public static func always<State>(_ prevState: State, _ newState: State) -> Bool { return true }
-    public static func stateHasChanged<State: Equatable>(_ prevState: State, _ newState: State) -> Bool { return prevState != newState }
+    public static func always<State>(_ oldState: State, _ newState: State) -> Bool { return true }
+    public static func stateHasChanged<State: Equatable>(_ oldState: State, _ newState: State) -> Bool { return oldState != newState }
 }
 
 public final class Store<State>: Dispatcher {
