@@ -56,11 +56,11 @@ public final class Store<State>: Dispatcher {
 
     @discardableResult
     public func subscribe(command: CommandWith<State>) -> Command {
-        return subscribe(command: command, for: Pass.always)
+        return subscribe(command: command, with: Pass.always)
     }
 
     @discardableResult
-    public func subscribe(command: CommandWith<State>, for filter: @escaping SubscriberFilter<State>) -> Command {
+    public func subscribe(command: CommandWith<State>, with filter: @escaping SubscriberFilter<State>) -> Command {
         let subscriber = Subscriber(command: command, filter: filter)
         self.queue.async {
             self.subscribers.insert(subscriber)
@@ -73,11 +73,11 @@ public final class Store<State>: Dispatcher {
 
     public func dispatch(action: Action) {
         self.queue.async {
-            let prevState = self.state
-            let newState = self.reducer(prevState, action)
+            let oldState = self.state
+            let newState = self.reducer(oldState, action)
             self.state = newState
             self.subscribers
-                    .filter { $0.pass(prevState, newState) }
+                    .filter { $0.pass(oldState, newState) }
                     .forEach { $0.command.execute(value: newState) }
         }
     }
