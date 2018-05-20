@@ -7,7 +7,7 @@ import Foundation
 import SUtils
 
 public typealias Reducer<State> = (State, Action) -> State
-public typealias SubscriberFilter<State> = (State, State) -> Bool
+public typealias SubscriberFilter<State> = (State, State, Action) -> Bool
 
 public protocol Action {}
 
@@ -16,8 +16,8 @@ public protocol Dispatcher {
 }
 
 public struct Pass {
-    public static func always<State>(_ oldState: State, _ newState: State) -> Bool { return true }
-    public static func stateHasChanged<State: Equatable>(_ oldState: State, _ newState: State) -> Bool { return oldState != newState }
+    public static func always<State>(_ oldState: State, _ newState: State, _ action: Action) -> Bool { return true }
+    public static func stateHasChanged<State: Equatable>(_ oldState: State, _ newState: State, _ action: Action) -> Bool { return oldState != newState }
 }
 
 public final class Store<State>: Dispatcher {
@@ -77,7 +77,7 @@ public final class Store<State>: Dispatcher {
             let newState = self.reducer(oldState, action)
             self.state = newState
             self.subscribers
-                    .filter { $0.pass(oldState, newState) }
+                    .filter { $0.pass(oldState, newState, action) }
                     .forEach { $0.command.execute(value: newState) }
         }
     }
