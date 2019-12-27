@@ -6,6 +6,23 @@
 import Foundation
 import SUtils
 
+// for cache pure function
+/*
+ uses:
+ func mapToProps(_ state: AppState) -> Props { ... }
+ let cacheMapToProps: (AppState) -> Props = memoizedF(mapToProps)
+ */
+public func memoizedF<In: Hashable, Out>(_ f: @escaping (In) -> Out) -> (In) -> Out {
+    var cache: [In: Out] = [:]
+    return { input in
+        cache[input] ?? {
+            let result = f(input)
+            cache[input] = result
+            return result
+        }()
+    }
+}
+
 public protocol Action {}
 
 public protocol Dispatcher {
@@ -19,7 +36,7 @@ public typealias Middleware<State> = (State, Action, Dispatcher) -> Void
 extension CommandWith: Hashable {
 
     public func hash(into hasher: inout Hasher) {
-        hasher.combine(self)
+        hasher.combine(ObjectIdentifier(self))
     }
 
     public static func == (lhs: CommandWith<T>, rhs: CommandWith<T>) -> Bool {
